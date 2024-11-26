@@ -6,6 +6,35 @@ import (
 	"testing"
 )
 
+func TestIntegerLiteralExpression(t *testing.T) {
+	input := "36"
+
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParseErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("program has incorrect number of statements. Got %d", len(program.Statements))
+	}
+
+	stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("program.Statements[0] is not ast.ExpressionStatement. Got %T", program.Statements[0])
+	}
+
+	ident, ok := stmt.Expression.(*ast.IntegerLiteral)
+	if !ok {
+		t.Fatalf("exp not *.ast.IntegerLiteral. Got %T", stmt.Expression)
+	}
+	if ident.Value != 36 {
+		t.Errorf("ident.Value not %s. Got %d", "36", ident.Value)
+	}
+	if ident.TokenLiteral() != "36" {
+		t.Errorf("ident.TokenLiteral not %s. Got %s", "36", ident.TokenLiteral())
+	}
+}
+
 func TestIdentifierExpression(t *testing.T) {
 	input := "foobar"
 
