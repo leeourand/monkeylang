@@ -1,10 +1,50 @@
 package parser
 
 import (
+	"fmt"
 	"monkey/ast"
 	"monkey/lexer"
 	"testing"
 )
+
+func TestPrefixExpression(t *testing.T) {
+	prefixTests := []struct {
+		input        string
+		operator     string
+		integerValue int64
+	}{
+		{"!5;", "!", 5},
+		{"-15;", "-", 15},
+	}
+
+	for _, tt := range prefixTests {
+		l := lexer.New(tt.input)
+		p := New(l)
+		program := p.ParseProgram()
+		checkParseErrors(t, p)
+
+		if len(program.Statements) != 1 {
+			t.Fatalf("program has incorrect number of statements. Got %d", len(program.Statements))
+		}
+
+		stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+		if !ok {
+			t.Fatalf("program.Statements[0] is not ast.ExpressionStatement. Got %T", program.Statements[0])
+		}
+
+		exp, ok := stmt.Expression.(*ast.PrefixExpression)
+		if !ok {
+			t.Fatalf("exp not *.ast.IntegerLiteral. Got %T", stmt.Expression)
+		}
+		if exp.Operator != tt.operator {
+			t.Errorf("exp.Operator is not %s. Got %s", tt.operator, exp.Operator)
+		}
+		if !testIntegerLiteral(t, exp.Right, tt.integerValue) {
+			return
+		}
+	}
+
+}
 
 func TestIntegerLiteralExpression(t *testing.T) {
 	input := "36"
@@ -31,7 +71,7 @@ func TestIntegerLiteralExpression(t *testing.T) {
 		t.Errorf("ident.Value not %s. Got %d", "36", ident.Value)
 	}
 	if ident.TokenLiteral() != "36" {
-		t.Errorf("ident.TokenLiteral not %s. Got %s", "36", ident.TokenLiteral())
+		t.Errorf("ident.TokenLiteral not %s. Got %s", "36t a", ident.TokenLiteral())
 	}
 }
 
@@ -165,4 +205,24 @@ func checkParseErrors(t *testing.T, p *Parser) {
 	}
 
 	t.FailNow()
+}
+
+func testIntegerLiteral(t *testing.T, il ast.Expression, value int64) bool {
+	integ, ok := il.(*ast.IntegerLiteral)
+	if !ok {
+		t.Errorf("il not *ast.IntegerLiteral. got %T", il)
+		return false
+	}
+
+	if integ.Value != value {
+		t.Errorf("integ.Value not %d. Got %d", value, integ.Value)
+		return false
+	}
+
+	if integ.TokenLiteral() != fmt.Sprintf("%d", value) {
+		t.Errorf("integ.TokenLiteral not %d. Got %s", value, integ.TokenLiteral())
+		return false
+	}
+
+	return true
 }
